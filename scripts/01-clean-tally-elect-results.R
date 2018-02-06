@@ -4,7 +4,6 @@
 
 library(tidyverse)
 library(janitor)
-library(sf)
 library(here)
 
 # read in cd11 2016
