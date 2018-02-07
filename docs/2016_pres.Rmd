@@ -88,7 +88,7 @@ make_margin <- function(x, digits = 1) {
 }
 ```
 
-Results for CD 11 at the election distrcit level. Green outlines indicates election district margins within &#177;10 points. Click on an ED for more details.  
+Results for CD 11 at the election distrcit level. Green outlines indicate election district margins within &#177;10 points. Click on an ED for more details.  
 
 ```{r make map, message = FALSE, out.width = "100%", out.height = "600px"}
 
@@ -134,7 +134,8 @@ tot <- pres_2016_margin %>%
 kable(
   tot,
   format = "html",
-  format.args = list(big.mark = ',')
+  format.args = list(big.mark = ','),
+  align = "c"
   ) %>%
   kable_styling(full_width = FALSE, position = "left")
 ```
