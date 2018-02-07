@@ -80,7 +80,7 @@ tm_shape(pres_2016_to_map, name = "2016 Presidential") +
       )
   ) +
   tm_borders(col = "darkgray") +
-  tm_shape(pres_2016_close_ed) +
+  tm_shape(pres_2016_close_ed, name = "Close EDs") +
   tm_borders(col = "green", lwd = 2)
 ```
 <br>
