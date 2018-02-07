@@ -1,0 +1,105 @@
+---
+title: "2017 Mayoral Election Results"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+library(knitr)
+library(kableExtra)
+library(tidyverse)
+library(here)
+library(janitor)
+library(sf)
+library(tmap)
+opts_chunk$set(echo = FALSE, cache = TRUE)
+```
+
+```{r process data, include = FALSE}
+# read in cd 11 ed shape file
+cd11_ed_sf <- read_sf(here("data/geo/cd11_ed.geojson"))
+
+# read in pres results 2016
+mayor_2017 <- read_csv(
+  here("output/elect_results/2017_mayor.csv"),
+  col_types = cols(year = "i", total_votes = "i", .default = "c")) %>%
+  mutate_at(vars(ends_with("_prop")), as.double) %>%
+  mutate_at(vars(ends_with("_tot")), as.integer)
+
+# create dem/rep margins, join with ed geo file
+mayor_2017_margin <- mayor_2017 %>%
+  mutate(margin = deblasio_prop - malliotakis_prop) %>%
+  select(elect_dist, total_votes, margin, deblasio_tot,
+         malliotakis_tot, deblasio_prop, malliotakis_prop)
+
+mayor_2017_to_map <- left_join(cd11_ed_sf, mayor_2017_margin) %>%
+  mutate(elect_dist = paste("ED", elect_dist))
+
+mayor_2017_close_ed <- mayor_2017_to_map %>%
+  filter(between(margin, -.1, .1))
+
+# define a little helper function to format percentages
+make_pct <- function(x, digits = 1) {
+  paste0(formatC(x * 100, digits = digits, format = "f"), "%")
+}
+
+# define a little helper function to format margins
+make_margin <- function(x, digits = 1) {
+  if_else(x > 0,
+          paste0("+",formatC(x * 100, digits = digits, format = "f")),
+          formatC(x * 100, digits = digits, format = "f")
+          )
+}
+```
+
+Results for CD 11 at the election distrcit level. Green outlines indicate election district margins within &#177;10 points. Click on an ED for more details.  
+
+```{r make map, message = FALSE, out.width = "100%", out.height = "600px"}
+
+# make a map of clinton/trump margin 2016, highlight ed +-10pt
+tmap_mode("view")
+tm_shape(mayor_2017_to_map, name = "2017 Mayoral") +
+  tm_fill(
+    col = "margin",
+    palette = "RdBu",
+    style = "cont",
+    breaks = seq(-1, 1, by = 0.2),
+    title = "D/R Margin",
+    textNA = "No Votes",
+    popup.vars = c(
+      "Dem/Rep Margin" = "margin",
+      "Total Votes" = "total_votes",
+      "de Blasio %" = "deblasio_prop",
+      "Malliotakis %" = "malliotakis_prop"
+    ),
+    id = "elect_dist",
+    popup.format = list(
+      margin = list(fun = make_margin),
+      total_votes = list(format = "f"),
+      deblasio_prop = list(fun = make_pct),
+      malliotakis_prop = list(fun = make_pct)
+      )
+  ) +
+  tm_borders(col = "darkgray") +
+  tm_shape(mayor_2017_close_ed) +
+  tm_borders(col = "green", lwd = 2)
+```
+<br>
+```{r table}
+tot <- mayor_2017_margin %>%
+  summarise(
+    `de Blasio` = sum(deblasio_tot, na.rm = TRUE),
+    Malliotakis = sum(malliotakis_tot, na.rm = TRUE),
+    Total = sum(total_votes, na.rm = TRUE),
+    `de Blasio %` = make_pct(`de Blasio` / Total),
+    `Malliotakis %` = make_pct(Malliotakis / Total)
+  )
+
+kable(
+  tot,
+  format = "html",
+  format.args = list(big.mark = ','),
+  align = "c"
+  ) %>%
+  kable_styling(full_width = FALSE, position = "left")
+```
+
