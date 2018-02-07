@@ -81,7 +81,12 @@ tm_shape(pres_2016_to_map, name = "2016 Presidential") +
   ) +
   tm_borders(col = "darkgray") +
   tm_shape(pres_2016_close_ed, name = "Close EDs") +
-  tm_borders(col = "green", lwd = 2)
+  tm_borders(col = "green", lwd = 2) +
+  tm_view(
+    alpha = 0.85,
+    basemaps = "Stamen.TonerLite",
+    legend.position = c("right", "bottom")
+    )
 ```
 <br>
 ```{r table}
