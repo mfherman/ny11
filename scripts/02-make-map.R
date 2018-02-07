@@ -4,8 +4,6 @@ library(janitor)
 library(sf)
 library(tmap)
 
-
-
 # only do this once to get a cd11 shapefile -- its saved in data/geo/cd11_ed.geojson now
 # # read in nyc ed shapefile
 # nyc_ed <- "http://services5.arcgis.com/GfwWNkhOj9bNBqoJ/arcgis/rest/services/nyed/FeatureServer/0/query?where=1=1&outFields=*&outSR=4326&f=geojson"
