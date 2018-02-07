@@ -4,8 +4,10 @@ library(janitor)
 library(sf)
 library(tmap)
 
-# # only do this once to get a cd11 shapefile -- its saved in data/geo/cd11_ed.geojson now
-# # download nyc ed shapefile
+
+
+# only do this once to get a cd11 shapefile -- its saved in data/geo/cd11_ed.geojson now
+# # read in nyc ed shapefile
 # nyc_ed <- "http://services5.arcgis.com/GfwWNkhOj9bNBqoJ/arcgis/rest/services/nyed/FeatureServer/0/query?where=1=1&outFields=*&outSR=4326&f=geojson"
 # ed <- read_sf(nyc_ed) %>%
 #   clean_names() %>%
@@ -33,7 +35,7 @@ library(tmap)
 # cd11_eds <- cd11_2016_results %>% distinct(elect_dist) %>% pull()
 # 
 # # filter nyc_ed file to cd11 only
-# cd11_ed_sf <- ed %>% 
+# cd11_ed_sf <- ed %>%
 #   filter(elect_dist %in% cd11_eds) %>%
 #   select(elect_dist, shape_area, shape_length)
 # 
@@ -42,6 +44,8 @@ library(tmap)
 
 # read in cd 11 ed shape file
 cd11_ed_sf <- read_sf(here("data/geo/cd11_ed.geojson"))
+
+cd11_new <- read_sf(here("data/geo/new_eds.geojson"))
 
 # read in pres results 2016
 pres_2016 <- read_csv(
