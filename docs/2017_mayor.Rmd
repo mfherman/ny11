@@ -55,7 +55,7 @@ Results for CD 11 at the election distrcit level. Green outlines indicate electi
 
 ```{r make map, message = FALSE, out.width = "100%", out.height = "600px"}
 
-# make a map of clinton/trump margin 2016, highlight ed +-10pt
+# make a map of margin, highlight ed +-10pt
 tmap_mode("view")
 tm_shape(mayor_2017_to_map, name = "2017 Mayoral") +
   tm_fill(
@@ -74,7 +74,7 @@ tm_shape(mayor_2017_to_map, name = "2017 Mayoral") +
     id = "elect_dist",
     popup.format = list(
       margin = list(fun = make_margin),
-      total_votes = list(format = "f"),
+      total_votes = list(format = "f", digits = 0),
       deblasio_prop = list(fun = make_pct),
       malliotakis_prop = list(fun = make_pct)
       )

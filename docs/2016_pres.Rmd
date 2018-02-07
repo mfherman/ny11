@@ -74,7 +74,7 @@ tm_shape(pres_2016_to_map, name = "2016 Presidential") +
     id = "elect_dist",
     popup.format = list(
       margin = list(fun = make_margin),
-      total_votes = list(format = "f"),
+      total_votes = list(format = "f", digits = 0),
       clinton_prop = list(fun = make_pct),
       trump_prop = list(fun = make_pct)
       )
