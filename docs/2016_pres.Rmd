@@ -11,7 +11,7 @@ library(here)
 library(janitor)
 library(sf)
 library(tmap)
-opts_chunk$set(echo = FALSE, cache = TRUE)
+opts_chunk$set(echo = FALSE, cache = TRUE, cache.path = here("cache/2016_pres/"))
 ```
 
 ```{r process data, include = FALSE}
