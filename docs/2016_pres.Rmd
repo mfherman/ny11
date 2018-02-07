@@ -34,8 +34,11 @@ pres_2016_margin <- pres_2016 %>%
 pres_2016_to_map <- left_join(cd11_ed_sf, pres_2016_margin) %>%
   mutate(elect_dist = paste("ED", elect_dist))
 
-pres_2016_close_ed <- pres_2016_to_map %>%
-  filter(between(margin, -.1, .1))
+pres_2016_close_rep <- pres_2016_to_map %>%
+  filter(margin >= -0.1 & margin < 0)
+
+pres_2016_close_dem <- pres_2016_to_map %>%
+  filter(margin >= 0 & margin <= 0.1)
 
 # define a little helper function to format percentages
 make_pct <- function(x, digits = 1) {
@@ -51,7 +54,11 @@ make_margin <- function(x, digits = 1) {
 }
 ```
 
-Results for CD 11 at the election distrcit level. Green outlines indicate election district margins within &#177;10 points. Click on an ED for more details.  
+### CD 11 results at the election district-level
+
+<span style="background-color:lightgreen">Green outlines</span> indicate election districts that lean Republican (between -10 and 0 point margin)  
+<span style="background-color:orange">Orange outlines</span> indicate election districts that lean Democratic (between 0 and +10 point margin)  
+Click an ED for details  
 
 ```{r make map, message = FALSE, out.width = "100%", out.height = "600px"}
 
@@ -80,7 +87,9 @@ tm_shape(pres_2016_to_map, name = "2016 Presidential") +
       )
   ) +
   tm_borders(col = "darkgray") +
-  tm_shape(pres_2016_close_ed, name = "Close EDs") +
+  tm_shape(pres_2016_close_dem, name = "Lean Dem") +
+  tm_borders(col = "orange", lwd = 2) +
+  tm_shape(pres_2016_close_rep, name = "Lean Rep") +
   tm_borders(col = "green", lwd = 2) +
   tm_view(
     alpha = 0.85,
@@ -97,7 +106,8 @@ tot <- pres_2016_margin %>%
     Total = sum(total_votes, na.rm = TRUE),
     `Clinton %` = make_pct(Clinton / Total),
     `Trump %` = make_pct(Trump / Total),
-    `Close EDs` = sum(between(margin, -.1, .1), na.rm = TRUE)
+    `Lean Rep EDs` = sum((margin >= -0.1 & margin < 0), na.rm = TRUE),
+    `Lean Dem EDs` = sum((margin >= 0 & margin <= 0.1), na.rm = TRUE)
   )
 
 kable(
@@ -108,4 +118,3 @@ kable(
   ) %>%
   kable_styling(full_width = FALSE, position = "left")
 ```
-
