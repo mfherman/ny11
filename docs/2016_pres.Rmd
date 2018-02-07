@@ -91,7 +91,8 @@ tot <- pres_2016_margin %>%
     Trump = sum(trump_tot, na.rm = TRUE),
     Total = sum(total_votes, na.rm = TRUE),
     `Clinton %` = make_pct(Clinton / Total),
-    `Trump %` = make_pct(Trump / Total)
+    `Trump %` = make_pct(Trump / Total),
+    `Close EDs` = sum(between(margin, -.1, .1), na.rm = TRUE)
   )
 
 kable(

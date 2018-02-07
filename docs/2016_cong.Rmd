@@ -1,5 +1,5 @@
 ---
-title: "2017 Mayoral Election Results"
+title: "2016 Congressional Election Results"
 output: html_document
 ---
 
@@ -11,30 +11,30 @@ library(here)
 library(janitor)
 library(sf)
 library(tmap)
-opts_chunk$set(echo = FALSE, cache = TRUE, cache.path = here("cache/2017_mayor/"))
+opts_chunk$set(echo = FALSE, cache = TRUE, cache.path = here("cache/2016_cong/"))
 ```
 
 ```{r process data, include = FALSE}
 # read in cd 11 ed shape file
 cd11_ed_sf <- read_sf(here("data/geo/cd11_ed.geojson"))
 
-# read in pres results 2016
-mayor_2017 <- read_csv(
-  here("output/elect_results/2017_mayor.csv"),
+# read in results
+cong_2016 <- read_csv(
+  here("output/elect_results/2016_cd11.csv"),
   col_types = cols(year = "i", total_votes = "i", .default = "c")) %>%
   mutate_at(vars(ends_with("_prop")), as.double) %>%
   mutate_at(vars(ends_with("_tot")), as.integer)
 
 # create dem/rep margins, join with ed geo file
-mayor_2017_margin <- mayor_2017 %>%
-  mutate(margin = deblasio_prop - malliotakis_prop) %>%
-  select(elect_dist, total_votes, margin, deblasio_tot,
-         malliotakis_tot, deblasio_prop, malliotakis_prop)
+cong_2016_margin <- cong_2016 %>%
+  mutate(margin = reichard_prop - donovan_prop) %>%
+  select(elect_dist, total_votes, margin, reichard_tot,
+         donovan_tot, reichard_prop, donovan_prop)
 
-mayor_2017_to_map <- left_join(cd11_ed_sf, mayor_2017_margin) %>%
+cong_2016_to_map <- left_join(cd11_ed_sf, cong_2016_margin) %>%
   mutate(elect_dist = paste("ED", elect_dist))
 
-mayor_2017_close_ed <- mayor_2017_to_map %>%
+cong_2016_close_ed <- cong_2016_to_map %>%
   filter(between(margin, -.1, .1))
 
 # define a little helper function to format percentages
@@ -55,9 +55,9 @@ Results for CD 11 at the election distrcit level. Green outlines indicate electi
 
 ```{r make map, message = FALSE, out.width = "100%", out.height = "600px"}
 
-# make a map of margin, highlight ed +-10pt
+# make a map of reichard/donovan margin 2016, highlight ed +-10pt
 tmap_mode("view")
-tm_shape(mayor_2017_to_map, name = "2017 Mayoral") +
+tm_shape(cong_2016_to_map, name = "2016 Congressional") +
   tm_fill(
     col = "margin",
     palette = "RdBu",
@@ -68,30 +68,30 @@ tm_shape(mayor_2017_to_map, name = "2017 Mayoral") +
     popup.vars = c(
       "Dem/Rep Margin" = "margin",
       "Total Votes" = "total_votes",
-      "de Blasio %" = "deblasio_prop",
-      "Malliotakis %" = "malliotakis_prop"
+      "Reichard %" = "reichard_prop",
+      "Donovan %" = "donovan_prop"
     ),
     id = "elect_dist",
     popup.format = list(
       margin = list(fun = make_margin),
       total_votes = list(format = "f", digits = 0),
-      deblasio_prop = list(fun = make_pct),
-      malliotakis_prop = list(fun = make_pct)
+      reichard_prop = list(fun = make_pct),
+      donovan_prop = list(fun = make_pct)
       )
   ) +
   tm_borders(col = "darkgray") +
-  tm_shape(mayor_2017_close_ed, name = "Close EDs") +
+  tm_shape(cong_2016_close_ed, name = "Close EDs") +
   tm_borders(col = "green", lwd = 2)
 ```
 <br>
 ```{r table}
-tot <- mayor_2017_margin %>%
+tot <- cong_2016_margin %>%
   summarise(
-    `de Blasio` = sum(deblasio_tot, na.rm = TRUE),
-    Malliotakis = sum(malliotakis_tot, na.rm = TRUE),
+    Reichard = sum(reichard_tot, na.rm = TRUE),
+    Donovan = sum(donovan_tot, na.rm = TRUE),
     Total = sum(total_votes, na.rm = TRUE),
-    `de Blasio %` = make_pct(`de Blasio` / Total),
-    `Malliotakis %` = make_pct(Malliotakis / Total),
+    `Reichard %` = make_pct(Reichard / Total),
+    `Donovan %` = make_pct(Donovan / Total),
     `Close EDs` = sum(between(margin, -.1, .1), na.rm = TRUE)
   )
 
