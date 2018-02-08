@@ -3,7 +3,7 @@ title: "2016 Presidential Election Results"
 output: html_document
 ---
 
-```{r setup, include=FALSE}
+```{r setup, include = FALSE}
 library(knitr)
 library(kableExtra)
 library(tidyverse)
@@ -11,6 +11,7 @@ library(here)
 library(janitor)
 library(sf)
 library(tmap)
+library(DT)
 opts_chunk$set(echo = FALSE, cache = TRUE, cache.path = here("cache/2016_pres/"))
 ```
 
@@ -54,13 +55,13 @@ make_margin <- function(x, digits = 1) {
 }
 ```
 
-### CD 11 results at the election district-level
+### NY 11 results at the election district-level
 
 <span style="background-color:lightgreen">Green outlines</span> indicate election districts that lean Republican (between -10 and 0 point margin)  
 <span style="background-color:orange">Orange outlines</span> indicate election districts that lean Democratic (between 0 and +10 point margin)  
 Click an ED for details  
 
-```{r make map, message = FALSE, out.width = "100%", out.height = "600px"}
+```{r make map, cache = FALSE, message = FALSE, out.width = "100%", out.height = "600px"}
 
 # make a map of clinton/trump margin 2016, highlight ed +-10pt
 tmap_mode("view")
@@ -97,8 +98,9 @@ tm_shape(pres_2016_to_map, name = "2016 Presidential") +
     legend.position = c("right", "bottom")
     )
 ```
-<br>
-```{r table}
+
+### NY 11 Summary
+```{r summary table}
 tot <- pres_2016_margin %>%
   summarise(
     Clinton = sum(clinton_tot, na.rm = TRUE),
@@ -118,3 +120,41 @@ kable(
   ) %>%
   kable_styling(full_width = FALSE, position = "left")
 ```
+
+
+### Swing District Detail
+*EDs between -10 and +10 margin*  
+<br>
+```{r data_table, cache = FALSE}
+to_table <- pres_2016_margin %>%
+  filter(between(margin, -0.1, 0.1)) %>%
+  mutate(
+    lean = if_else(
+      (margin >= -0.1 & margin < 0), "Republican", "Democratic"
+      ),
+    margin = margin * 100
+    ) %>%
+  select(elect_dist, margin, lean, total_votes,
+         clinton_prop, trump_prop, everything()) %>%
+  arrange(margin)
+
+datatable(
+  to_table,
+  class = "row-border hover",
+  rownames = FALSE,
+  colnames = c("Election District", "Margin", "Lean", "Total Votes",
+               "Clinton %", "Trump %", "Clinton", "Trump"),
+  extensions = c("Buttons", "Scroller"),
+  options = list(
+    dom = "Bfrtip",
+    buttons = c("csv", "print"),
+    deferRender = TRUE,
+    scrollY = "370px",
+    scroller = TRUE
+    )
+  ) %>%
+  formatPercentage(5:6, 1) %>%
+  formatRound(2, 1)
+```
+
+
