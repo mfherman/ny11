@@ -143,7 +143,7 @@ datatable(
   rownames = FALSE,
   colnames = c("Election District", "Margin", "Lean", "Total Votes",
                "Reichard %", "Donovan %", "Reichard", "Donovan"),
-  extensions = c("Buttons", "Scroller"),
+  extensions = c("Buttons", "Scroller", "Responsive"),
   options = list(
     dom = "Bfrtip",
     buttons = c("csv", "print"),
