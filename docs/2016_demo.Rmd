@@ -1,0 +1,184 @@
+---
+title: "NY 11 Demographics"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+library(knitr)
+library(kableExtra)
+library(tidyverse)
+library(here)
+library(janitor)
+library(sf)
+library(tmap)
+library(DT)
+opts_chunk$set(echo = FALSE, cache = TRUE, cache.path = here("cache/2016_cong/"))
+```
+
+```{r process data, include = FALSE}
+# read in cd 11 demo shape file
+cd11_ed_sf <- read_sf(here("output/geo/cd11_demo_2016.geojson"))
+
+# read in results
+cong_2016 <- read_csv(
+  here("output/elect_results/2016_cd11.csv"),
+  col_types = cols(year = "i", total_votes = "i", .default = "c")) %>%
+  mutate_at(vars(ends_with("_prop")), as.double) %>%
+  mutate_at(vars(ends_with("_tot")), as.integer)
+
+# create dem/rep margins, join with ed geo file
+cong_2016_margin <- cong_2016 %>%
+  mutate(margin = reichard_prop - donovan_prop) %>%
+  select(elect_dist, total_votes, margin, reichard_tot,
+         donovan_tot, reichard_prop, donovan_prop)
+
+cong_2016_to_map <- left_join(cd11_ed_sf, cong_2016_margin) %>%
+  mutate(elect_dist = paste("ED", elect_dist))
+
+cong_2016_close_rep <- cong_2016_to_map %>%
+  filter(margin >= -0.1 & margin < 0)
+
+cong_2016_close_dem <- cong_2016_to_map %>%
+  filter(margin >= 0 & margin <= 0.1)
+
+# define a little helper function to format percentages
+make_pct <- function(x, digits = 1) {
+  paste0(formatC(x * 100, digits = digits, format = "f"), "%")
+}
+
+# define a little helper function to format $$
+make_dollar <- function(x, digits = 0) {
+  paste0("$", formatC(x, digits = digits, format = "f", big.mark = ","))
+}
+
+# define a little helper function to format margins
+make_margin <- function(x, digits = 1) {
+  if_else(x > 0,
+          paste0("+",formatC(x * 100, digits = digits, format = "f")),
+          formatC(x * 100, digits = digits, format = "f")
+          )
+}
+
+
+```
+
+### American Community Survey sociodemographic data at the election district-level
+
+<span style="background-color:lightgreen">Green outlines</span> indicate election districts that lean Republican (between -10 and 0 point margin)  
+<span style="background-color:orange">Orange outlines</span> indicate election districts that lean Democratic (between 0 and +10 point margin)  
+Click an ED for details  
+
+## Median Household Income
+```{r income map, cache = FALSE, message = FALSE, out.width = "100%", out.height = "600px"}
+
+# make a map of reichard/donovan margin 2016, highlight ed +-10pt
+tmap_mode("view")
+tm_shape(cong_2016_to_map, name = "HH Income") +
+  tm_fill(
+    col = "med_hhinc",
+    palette = "Purples",
+    style = "cont",
+    contrast = c(0.2, 1),
+    title = "Median HH Income",
+    textNA = "No Data",
+    popup.vars = c(
+      "Median HH Income" = "med_hhinc",
+      "Dem/Rep Margin" = "margin",
+      "Total Votes" = "total_votes"
+    ),
+    id = "elect_dist",
+    popup.format = list(
+      med_hhinc = list(fun = make_dollar),
+      margin = list(fun = make_margin),
+      total_votes = list(format = "f", digits = 0)
+      )
+  ) +
+  tm_borders(col = "darkgray") +
+  tm_shape(cong_2016_close_dem, name = "Lean Dem") +
+  tm_borders(col = "orange", lwd = 2) +
+  tm_shape(cong_2016_close_rep, name = "Lean Rep") +
+  tm_borders(col = "green", lwd = 2) +
+  tm_view(
+    alpha = 0.85,
+    basemaps = "Stamen.TonerLite",
+    legend.position = c("right", "bottom")
+    )
+```
+<br>
+<br>
+
+## Percentage White
+```{r race map, cache = FALSE, message = FALSE, out.width = "100%", out.height = "600px"}
+
+# make a map of reichard/donovan margin 2016, highlight ed +-10pt
+tmap_mode("view")
+tm_shape(cong_2016_to_map, name = "% White") +
+  tm_fill(
+    col = "pop_white_adj_pct",
+    palette = "-RdPu",
+    style = "cont",
+    contrast = c(0, 0.8),
+    title = "% White",
+    textNA = "No Data",
+    popup.vars = c(
+      "% White" = "pop_white_adj_pct",
+      "Dem/Rep Margin" = "margin",
+      "Total Votes" = "total_votes"
+    ),
+    id = "elect_dist",
+    popup.format = list(
+      pop_white_adj_pct = list(fun = make_pct),
+      margin = list(fun = make_margin),
+      total_votes = list(format = "f", digits = 0)
+      )
+  ) +
+  tm_borders(col = "darkgray") +
+  tm_shape(cong_2016_close_dem, name = "Lean Dem") +
+  tm_borders(col = "orange", lwd = 2) +
+  tm_shape(cong_2016_close_rep, name = "Lean Rep") +
+  tm_borders(col = "green", lwd = 2) +
+  tm_view(
+    alpha = 0.85,
+    basemaps = "Stamen.TonerLite",
+    legend.position = c("right", "bottom")
+    )
+```
+
+### Swing District Detail
+*EDs between -10 and +10 margin*  
+<br>
+```{r data_table, cache = FALSE}
+to_table <- cong_2016_to_map %>%
+  filter(between(margin, -0.1, 0.1)) %>%
+  mutate(
+    lean = if_else(
+      (margin >= -0.1 & margin < 0), "Republican", "Democratic"
+      ),
+    margin = margin * 100
+    ) %>%
+  select(elect_dist, margin, lean, total_votes,
+         med_hhinc, pop_white_adj_pct, reichard_prop, donovan_prop) %>%
+  arrange(margin) %>%
+  st_set_geometry(NULL)
+
+datatable(
+  to_table,
+  class = "row-border hover",
+  rownames = FALSE,
+  colnames = c("Election District", "Margin", "Lean", "Total Votes", 
+               "Median HH Income", "White %", "Reichard %", "Donovan %"),
+  extensions = c("Buttons", "Scroller", "Responsive"),
+  options = list(
+    dom = "Bfrtip",
+    buttons = c("csv", "print"),
+    deferRender = TRUE,
+    scrollY = "370px",
+    scroller = TRUE
+    )
+  ) %>%
+  formatPercentage(6:8, 1) %>%
+  formatRound(2, 1) %>%
+  formatCurrency(5, digits = 0)
+```
+
+
