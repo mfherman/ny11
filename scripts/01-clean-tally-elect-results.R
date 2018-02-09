@@ -38,8 +38,8 @@ cd11_2016_clean <- cd11_2016_results %>%
   gather(candidate, tally, -(elect_dist:office)) %>%
   arrange(elect_dist)
 
-# define vector of cd11 election districts
-cd11_eds <- cd11_2016_results %>% distinct(elect_dist) %>% pull()
+# define vector of cd11 2016 election districts
+cd11_eds_2016 <- cd11_2016_results %>% distinct(elect_dist) %>% pull()
 
 # read in 2016 pres results
 pres_2016_results <- read_csv(
@@ -57,7 +57,7 @@ pres_2016_results <- read_csv(
       str_detect(unit_name, "Trump") ~ "Trump"
     )
   ) %>%
-  filter(!is.na(candidate) & elect_dist %in% cd11_eds) %>%
+  filter(!is.na(candidate) & elect_dist %in% cd11_eds_2016) %>%
   select(elect_dist, candidate, tally)
 
 # tally and tidy 2016 pres results
@@ -74,6 +74,11 @@ pres_2016_clean <- pres_2016_results %>%
   ) %>%
   gather(candidate, tally, -(elect_dist:office)) %>%
   arrange(elect_dist)
+
+# define vector of cd11 2017 election districts
+cd11_eds_2017 <- read_csv(here("data/cd11_eds_2017.csv")) %>%
+  pull(elect_dist) %>%
+  as.character()
 
 # read in 2017 mayor results
 mayor_2017_results <- read_csv(
@@ -94,7 +99,7 @@ mayor_2017_results <- read_csv(
       str_detect(unit_name, "Tolkin") ~ "Tolkin"
     )
   ) %>%
-  filter(!is.na(candidate) & elect_dist %in% cd11_eds) %>%
+  filter(!is.na(candidate) & elect_dist %in% cd11_eds_2017) %>%
   select(elect_dist, candidate, tally)
 
 # tally and tidy 2017 mayor results

@@ -43,6 +43,44 @@ library(tmap)
 # read in cd 11 ed shape file
 cd11_ed_sf <- read_sf(here("data/geo/cd11_ed.geojson"))
 
+
+cong_2016 <- read_csv(
+  here("output/elect_results/2016_cd11.csv"),
+  col_types = cols(year = "i", total_votes = "i", .default = "c")) %>%
+  mutate_at(vars(ends_with("_prop")), as.double) %>%
+  mutate_at(vars(ends_with("_tot")), as.integer)
+
+
+
+nyed_16c <- read_sf(here("data/geo/nyed_16c"))
+nyed_16d <- read_sf(here("data/geo/nyed_16d"))
+nyed_17d <- read_sf(here("data/geo/nyed_17d"))
+
+all.equal(nyed_16c, nyed_16d)
+
+mapview(nyed_16c, col.regions = "red") + mapview(nyed_17d, col.regions = "blue")
+
+# find combined eds
+cd11_2017_combined <- read_csv(
+  file = here("data/2017_mayor_results.csv"),
+  col_types = cols(.default = "c")
+) %>%
+  clean_names() %>%
+  mutate(
+    ed_split = str_sub(edad_status, start = -6),
+    ed_new = paste0(str_sub(ed_split, start = -2), str_sub(ed_split, end = 3)),
+    elect_dist = paste0(ad, ed)
+  ) %>%
+  select(elect_dist, ed_new) %>%
+  filter(ed_new != "AYN-P") %>%
+  distinct(elect_dist, ed_new)
+
+
+
+
+
+
+
 cd11_new <- read_sf(here("data/geo/new_eds.geojson"))
 
 # read in pres results 2016
