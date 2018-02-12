@@ -8,9 +8,28 @@ library(tmap)
 options(tigris_use_cache = TRUE)
 
 # download census data and geometry
-variables <- c("B01001_001", "B03002_003", "B03002_004", "B03002_006",
-                  "B03002_012","B01002_001", "B19013_001", "B19058_002",
-                  "B25071_001", "B17021_002", "B17021_001")
+variables <- c(
+  "B01001_001",
+  "B03002_003",
+  "B03002_004",
+  "B03002_006",
+  "B03002_012",
+  "B01002_001",
+  "B19013_001",
+  "B19058_002",
+  "B25071_001",
+  "B17021_002",
+  "B17021_001",
+  "B15003_001", # education
+  "B15003_022",
+  "B15003_023",
+  "B15003_024",
+  "B15003_025",
+  "B25003_001",
+  "B25003_003", # renter occupied,
+  "B23025_003",
+  "B23025_005" # unemployed
+  )
 
 bg <- get_acs(
   state = "NY",
@@ -31,7 +50,16 @@ bg_stat <- bg %>%
     hisp_pct = B03002_012E / B01001_001E,
     asian_pct = B03002_006E / B01001_001E,
     other_pct = white_pct + black_pct + hisp_pct + asian_pct,
-    pov_pct = B17021_002E / B17021_001E
+    pov_pct = B17021_002E / B17021_001E,
+    pop_ba = B15003_022E + B15003_023E + B15003_024E + B15003_025E,
+    pop_ba_denom = B15003_001E,
+    pop_rent = B25003_003E,
+    pop_rent_denom = B25003_001E,
+    pop_unempl = B23025_005E,
+    pop_unempl_denom = B23025_003E,
+    rent_pct = B25003_003E / B25003_001E,
+    ba_pct = pop_ba / B15003_001E,
+    unempl_pct = B23025_005E / B23025_003E
   ) %>%
   select(
     geoid = GEOID,
@@ -47,7 +75,8 @@ bg_stat <- bg %>%
     pop_hisp = B03002_012E,
     pop_asian = B03002_006E,
     pop_other,
-    white_pct:pov_pct
+    pop_ba:pop_unempl_denom,
+    white_pct:unempl_pct
   ) %>%
   st_transform(4326)
 
@@ -83,7 +112,7 @@ bg_ed_calc <- function(ed, bg) {
     mutate_at(vars(contains("pop")), funs(adj = (. * area_bg_prop))) %>%
     select(
       elect_dist, geoid, area_bg_ed:area_ed_prop,
-      med_age:med_rburd, pop_tot_adj:pop_other_adj
+      med_age:med_rburd, pop_tot_adj:pop_unempl_denom_adj
     )
 
   pop_sum <- ed_bg %>%
@@ -91,6 +120,9 @@ bg_ed_calc <- function(ed, bg) {
     summarize_at(vars(contains("pop")), funs(sum(., na.rm = TRUE))) %>%
     mutate_at(vars(pop_white_adj:pop_other_adj), funs(pct = (. / pop_tot_adj))) %>%
     mutate_at(vars(pop_pov_adj), funs(pop_pov_pct = (. / pop_pov_denom_adj))) %>%
+    mutate_at(vars(pop_rent_adj), funs(pop_rent_pct = (. / pop_rent_denom_adj))) %>%
+    mutate_at(vars(pop_unempl_adj), funs(pop_unempl_pct = (. / pop_unempl_denom_adj))) %>%
+    mutate_at(vars(pop_ba_adj), funs(pop_ba_pct = (. / pop_ba_denom_adj))) %>%
     st_set_geometry(NULL)
 
   med_sum <- ed_bg %>%
@@ -105,7 +137,7 @@ bg_ed_calc <- function(ed, bg) {
 
 cd11_demo_2016 <- bg_ed_calc(cd11, bg_clip)
 
-mapview(cd11_demo_2016, zcol = "med_hhinc")
+mapview(cd11_demo_2016, zcol = "pop_rent_pct")
 
 st_write(cd11_demo_2016, here("output/geo/cd11_demo_2016.geojson"))
 

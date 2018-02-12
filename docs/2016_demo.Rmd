@@ -12,6 +12,7 @@ library(janitor)
 library(sf)
 library(tmap)
 library(DT)
+library(RColorBrewer)
 opts_chunk$set(echo = FALSE, cache = TRUE, cache.path = here("cache/2016_cong/"))
 ```
 
@@ -57,9 +58,7 @@ make_margin <- function(x, digits = 1) {
           paste0("+",formatC(x * 100, digits = digits, format = "f")),
           formatC(x * 100, digits = digits, format = "f")
           )
-}
-
-
+} 
 ```
 
 ### American Community Survey sociodemographic data at the election district-level
@@ -143,6 +142,84 @@ tm_shape(cong_2016_to_map, name = "% White") +
     legend.position = c("right", "bottom")
     )
 ```
+<br>
+<br>
+
+## Percentage with Bachelor's Degree
+```{r edu map, cache = FALSE, message = FALSE, out.width = "100%", out.height = "600px"}
+
+# make a map of reichard/donovan margin 2016, highlight ed +-10pt
+tmap_mode("view")
+tm_shape(cong_2016_to_map, name = "% Bachelors") +
+  tm_fill(
+    col = "pop_ba_pct",
+    palette = "Blues",
+    style = "cont",
+    contrast = c(0, 0.8),
+    title = "% Bachelors",
+    textNA = "No Data",
+    popup.vars = c(
+      "% Bachelors" = "pop_ba_pct",
+      "Dem/Rep Margin" = "margin",
+      "Total Votes" = "total_votes"
+    ),
+    id = "elect_dist",
+    popup.format = list(
+      pop_ba_pct = list(fun = make_pct),
+      margin = list(fun = make_margin),
+      total_votes = list(format = "f", digits = 0)
+      )
+  ) +
+  tm_borders(col = "darkgray") +
+  tm_shape(cong_2016_close_dem, name = "Lean Dem") +
+  tm_borders(col = "orange", lwd = 2) +
+  tm_shape(cong_2016_close_rep, name = "Lean Rep") +
+  tm_borders(col = "green", lwd = 2) +
+  tm_view(
+    alpha = 0.85,
+    basemaps = "Stamen.TonerLite",
+    legend.position = c("right", "bottom")
+    )
+```
+<br>
+<br>
+
+## Percentage Renters
+```{r rent map, cache = FALSE, message = FALSE, out.width = "100%", out.height = "600px"}
+
+# make a map of reichard/donovan margin 2016, highlight ed +-10pt
+tmap_mode("view")
+tm_shape(cong_2016_to_map, name = "% Renters") +
+  tm_fill(
+    col = "pop_rent_pct",
+    palette = "Greens",
+    style = "cont",
+    contrast = c(0, 0.8),
+    title = "% Renters",
+    textNA = "No Data",
+    popup.vars = c(
+      "% Renters" = "pop_rent_pct",
+      "Dem/Rep Margin" = "margin",
+      "Total Votes" = "total_votes"
+    ),
+    id = "elect_dist",
+    popup.format = list(
+      pop_rent_pct = list(fun = make_pct),
+      margin = list(fun = make_margin),
+      total_votes = list(format = "f", digits = 0)
+      )
+  ) +
+  tm_borders(col = "darkgray") +
+  tm_shape(cong_2016_close_dem, name = "Lean Dem") +
+  tm_borders(col = "orange", lwd = 2) +
+  tm_shape(cong_2016_close_rep, name = "Lean Rep") +
+  tm_borders(col = "green", lwd = 2) +
+  tm_view(
+    alpha = 0.85,
+    basemaps = "Stamen.TonerLite",
+    legend.position = c("right", "bottom")
+    )
+```
 
 ### Swing District Detail
 *EDs between -10 and +10 margin*  
@@ -156,8 +233,9 @@ to_table <- cong_2016_to_map %>%
       ),
     margin = margin * 100
     ) %>%
-  select(elect_dist, margin, lean, total_votes,
-         med_hhinc, pop_white_adj_pct, reichard_prop, donovan_prop) %>%
+  select(elect_dist, margin, lean, total_votes, med_hhinc,
+         pop_white_adj_pct, pop_ba_pct, pop_rent_pct,
+         reichard_prop, donovan_prop) %>%
   arrange(margin) %>%
   st_set_geometry(NULL)
 
@@ -166,7 +244,8 @@ datatable(
   class = "row-border hover",
   rownames = FALSE,
   colnames = c("Election District", "Margin", "Lean", "Total Votes", 
-               "Median HH Income", "White %", "Reichard %", "Donovan %"),
+               "Median HH Income", "White %", "Bachelors %", "Renters %",
+               "Reichard %", "Donovan %"),
   extensions = c("Buttons", "Scroller", "Responsive"),
   options = list(
     dom = "Bfrtip",
@@ -176,7 +255,7 @@ datatable(
     scroller = TRUE
     )
   ) %>%
-  formatPercentage(6:8, 1) %>%
+  formatPercentage(6:10, 1) %>%
   formatRound(2, 1) %>%
   formatCurrency(5, digits = 0)
 ```

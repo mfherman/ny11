@@ -4,53 +4,14 @@ library(janitor)
 library(sf)
 library(tmap)
 
-# only do this once to get a cd11 shapefile -- its saved in data/geo/cd11_ed.geojson now
-# # read in nyc ed shapefile
-# nyc_ed <- "http://services5.arcgis.com/GfwWNkhOj9bNBqoJ/arcgis/rest/services/nyed/FeatureServer/0/query?where=1=1&outFields=*&outSR=4326&f=geojson"
-# ed <- read_sf(nyc_ed) %>%
-#   clean_names() %>%
-#   mutate(elect_dist = as.character(elect_dist))
-# 
-# # read in cd11 2016
-# cd11_2016_results <- read_csv(
-#   file = here("data/2016_cd11_results.csv"),
-#   col_types = cols(.default = "c")
-# ) %>%
-#   clean_names() %>%
-#   mutate(
-#     elect_dist = paste0(ad, ed),
-#     tally = as.integer(tally),
-#     candidate = case_when(
-#       str_detect(unit_name, "Donovan") ~ "Donovan",
-#       str_detect(unit_name, "Reichard") ~ "Reichard",
-#       str_detect(unit_name, "Bardel") ~ "Bardel"
-#     )
-#   ) %>%
-#   filter(!is.na(candidate)) %>%
-#   select(elect_dist, candidate, tally)
-# 
-# # define vector of cd11 election districts
-# cd11_eds <- cd11_2016_results %>% distinct(elect_dist) %>% pull()
-# 
-# # filter nyc_ed file to cd11 only
-# cd11_ed_sf <- ed %>%
-#   filter(elect_dist %in% cd11_eds) %>%
-#   select(elect_dist, shape_area, shape_length)
-# 
-# # write to geojson
-# write_sf(cd11_ed_sf, here("data/geo/cd11_ed.geojson"))
-
 # read in cd 11 ed shape file
 cd11_ed_sf <- read_sf(here("data/geo/cd11_ed.geojson"))
-
 
 cong_2016 <- read_csv(
   here("output/elect_results/2016_cd11.csv"),
   col_types = cols(year = "i", total_votes = "i", .default = "c")) %>%
   mutate_at(vars(ends_with("_prop")), as.double) %>%
   mutate_at(vars(ends_with("_tot")), as.integer)
-
-
 
 nyed_16c <- read_sf(here("data/geo/nyed_16c"))
 nyed_16d <- read_sf(here("data/geo/nyed_16d"))
