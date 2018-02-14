@@ -154,6 +154,6 @@ datatable(
   formatStyle(
   "margin",
   target = 'row',
-  backgroundColor = styleInterval(c(0), c('#FFDEDE69','#DBE3FFCA'))
+  backgroundColor = styleInterval(c(0), c("#FFF5F5", "#F5F9FF"))
 )
 ```
