@@ -245,7 +245,7 @@ datatable(
   rownames = FALSE,
   colnames = c("Election District", "Margin", "Lean", "Total Votes", 
                "Median HH Income", "White %", "Bachelors %", "Renters %",
-               "Reichard %", "Donovan %"),
+               "Clinton %", "Trump %"),
   extensions = c("Buttons", "Scroller", "Responsive"),
   options = list(
     dom = "Bfrtip",
