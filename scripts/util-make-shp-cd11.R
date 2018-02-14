@@ -136,3 +136,25 @@ cd11_2014 %>%
   summarise() %>%
   st_cast() %>%
   write_sf(here("output/geo/cd11_ed_2014.geojson"))
+
+
+
+## 2012
+# define vector of eds in cd11
+cd11_2012_eds <-
+  read_csv(here("output/elect_results/2012_cong.csv")) %>% 
+  pull(elect_dist)
+
+water_eds <- c("62074", "63076", "63074", "61062", "64057", "64056", "46047", "64094")
+
+cd11_2012 <- read_sf(here("data/geo/nyed_12b")) %>%
+  clean_names() %>%
+  mutate(elect_dist = as.character(elect_dist)) %>%
+  filter(elect_dist %in% cd11_2012_eds & !(elect_dist %in% water_eds)) %>%
+  select(elect_dist) %>%
+  st_transform(4326) %>%
+  st_make_valid() %>%
+  st_cast()
+
+# write new combined shp file
+cd11_2012 %>% write_sf(here("output/geo/cd11_ed_2012.geojson"))
