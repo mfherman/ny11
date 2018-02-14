@@ -8,4 +8,6 @@
 
 [2014 Congressional General Election](/2014_cong.html)
 
+[2012 Presidential General Election](/2012_pres.html)
+
 [NY 11 Demographic Maps](/2016_demo.html)
