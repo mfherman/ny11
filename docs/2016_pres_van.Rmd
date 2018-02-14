@@ -153,7 +153,7 @@ datatable(
   formatCurrency(5, digits = 0) %>%
   formatStyle(
   "margin",
-  target = 'row',
+  target = "row",
   backgroundColor = styleInterval(c(0), c("#FFF5F5", "#F5F9FF"))
 )
 ```

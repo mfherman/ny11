@@ -154,7 +154,12 @@ datatable(
     )
   ) %>%
   formatPercentage(5:6, 1) %>%
-  formatRound(2, 1)
+  formatRound(2, 1) %>%
+  formatStyle(
+  "margin",
+  target = "row",
+  backgroundColor = styleInterval(c(0), c("#FFF5F5", "#F5F9FF"))
+)
 ```
 
 
