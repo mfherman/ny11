@@ -215,7 +215,6 @@ leaf_map <- tmap_leaflet(
   )
 
 leaf_map %>% 
- # hideGroup(c("HH Income", "% White", "% Bachelors")) %>%
     addLayersControl(
       baseGroups = c(
         "2016 Presidential",

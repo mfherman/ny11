@@ -12,6 +12,8 @@ library(janitor)
 library(sf)
 library(tmap)
 library(DT)
+library(leaflet)
+library(leaflet.extras)
 opts_chunk$set(
   echo = FALSE,
   warning = FALSE,
@@ -70,7 +72,7 @@ Click an ED for details
 
 # make a map of margin, highlight ed +-10pt
 tmap_mode("view")
-tm_shape(cong_2014_to_map, name = "2014 Congressional") +
+map <- tm_shape(cong_2014_to_map, name = "2014 Congressional") +
   tm_fill(
     col = "margin",
     palette = "RdBu",
@@ -102,6 +104,19 @@ tm_shape(cong_2014_to_map, name = "2014 Congressional") +
     basemaps = "Stamen.TonerLite",
     legend.position = c("right", "bottom")
     )
+
+tmap_leaflet(map) %>%
+  addSearchFeatures(
+    targetGroups = "2014 Congressional",
+    options = searchFeaturesOptions(
+      zoom = 14,
+      openPopup = TRUE,
+      collapsed = FALSE,
+      position = "topright",
+      textPlaceholder = "Search EDs..."
+      )
+    ) %>%
+  addFullscreenControl(pseudoFullscreen = TRUE)
 ```
 
 ### NY 11 Summary

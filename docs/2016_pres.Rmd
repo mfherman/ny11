@@ -12,6 +12,8 @@ library(janitor)
 library(sf)
 library(tmap)
 library(DT)
+library(leaflet)
+library(leaflet.extras)
 opts_chunk$set(echo = FALSE, cache = TRUE, cache.path = here("cache/2016_pres/"))
 ```
 
@@ -65,7 +67,8 @@ Click an ED for details
 
 # make a map of clinton/trump margin 2016, highlight ed +-10pt
 tmap_mode("view")
-tm_shape(pres_2016_to_map, name = "2016 Presidential") +
+map <- 
+  tm_shape(pres_2016_to_map, name = "2016 Presidential") +
   tm_fill(
     col = "margin",
     palette = "RdBu",
@@ -97,6 +100,20 @@ tm_shape(pres_2016_to_map, name = "2016 Presidential") +
     basemaps = "Stamen.TonerLite",
     legend.position = c("right", "bottom")
     )
+
+tmap_leaflet(map) %>%
+  addSearchFeatures(
+    targetGroups = "2016 Presidential",
+    options = searchFeaturesOptions(
+      zoom = 14,
+      openPopup = TRUE,
+      collapsed = FALSE,
+      position = "topright",
+      textPlaceholder = "Search EDs..."
+      )
+    ) %>%
+  addFullscreenControl(pseudoFullscreen = TRUE)
+
 ```
 
 ### NY 11 Summary
