@@ -12,14 +12,16 @@ library(janitor)
 library(sf)
 library(tmap)
 library(DT)
+library(tmaptools)
+library(leaflet)
+library(leaflet.extras)
 opts_chunk$set(echo = FALSE, cache = TRUE, cache.path = here("cache/2016_pres_van/"))
 ```
 
 ```{r process data, include = FALSE}
 # read in cd 11 ed shape file
 cd11_ed_sf <- read_sf(here("output/geo/van_ed_demo.geojson"))
-cd11_ed_all_sf <- read_sf(here("output/geo/cd11_ed_2016.geojson"))
-
+cd11_ed_all_sf <- read_sf(here("output/geo/cd11_demo_2016.geojson"))
 
 # read in pres results 2016
 pres_2016 <- read_csv(
@@ -28,13 +30,16 @@ pres_2016 <- read_csv(
   mutate_at(vars(ends_with("_prop")), as.double) %>%
   mutate_at(vars(ends_with("_tot")), as.integer)
 
-# create dem/rep margins, join with ed geo file
+# create dem/rep margins foron, join with ed geo file
 pres_2016_margin <- pres_2016 %>%
   mutate(margin = clinton_prop - trump_prop) %>%
   select(elect_dist, total_votes, margin, clinton_tot,
          trump_tot, clinton_prop, trump_prop)
 
 pres_2016_to_map <- left_join(cd11_ed_sf, pres_2016_margin) %>%
+  mutate(elect_dist = paste("ED", elect_dist))
+
+pres_2016_all_to_map <- left_join(cd11_ed_all_sf, pres_2016_margin) %>%
   mutate(elect_dist = paste("ED", elect_dist))
 
 # define a little helper function to format percentages
@@ -57,43 +62,181 @@ make_margin <- function(x, digits = 1) {
 ```
 
 ### NY 11 results at the election district-level
-<span style="background-color:lightgreen">Highlighted districts</span> are included in CTCT's NGP VAN Database
-Click an ED for details
-
+<span style="background-color:lightgreen">Highlighted districts</span> (`r nrow(pres_2016_to_map)`) are included in CTCT's NGP VAN Database
 ```{r make map, cache = FALSE, message = FALSE, out.width = "100%", out.height = "600px"}
 # make a map of clinton/trump margin 2016, highlight ed +-10pt
 tmap_mode("view")
-tm_shape(cd11_ed_all_sf, name = "CD 11") +
-  tm_fill(col = "lightgray") +
-  tm_borders(col = "darkgray") +
-tm_shape(pres_2016_to_map, name = "2016 Presidential") +
+layer_cd11 <- 
+  tm_shape(pres_2016_all_to_map, name = "CD 11") +
   tm_fill(
-    col = "margin",
-    palette = "RdBu",
-    style = "cont",
-    breaks = seq(-1, 1, by = 0.2),
-    title = "D/R Margin",
-    textNA = "No Votes",
+    col = "#D4D4D4",
+    id = "elect_dist",
     popup.vars = c(
       "Dem/Rep Margin" = "margin",
       "Total Votes" = "total_votes",
       "Clinton %" = "clinton_prop",
-      "Trump %" = "trump_prop"
+      "Trump %" = "trump_prop",
+      "Median HH Income" = "med_hhinc",
+      "% Bachelors" = "pop_ba_pct",
+      "% White" = "pop_white_adj_pct"
     ),
-    id = "elect_dist",
     popup.format = list(
       margin = list(fun = make_margin),
       total_votes = list(format = "f", digits = 0),
       clinton_prop = list(fun = make_pct),
-      trump_prop = list(fun = make_pct)
+      trump_prop = list(fun = make_pct),
+      med_hhinc = list(fun = make_dollar),
+      pop_ba_pct = list(fun = make_pct),
+      pop_white_adj_pct = list(fun = make_pct)
+      )
+    ) +
+  tm_borders(col = "darkgray")
+  
+layer_pres2016 <- 
+  tm_shape(pres_2016_to_map, name = "2016 Presidential") +
+  tm_fill(
+    col = "margin",
+    palette = "RdBu",
+    style = "cont",
+    alpha = 0.65,
+    breaks = seq(-1, 1, by = 0.2),
+    title = "D/R Margin",
+    textNA = "No Votes",
+    id = "elect_dist",
+    popup.vars = c(
+      "Dem/Rep Margin" = "margin",
+      "Total Votes" = "total_votes",
+      "Clinton %" = "clinton_prop",
+      "Trump %" = "trump_prop",
+      "Median HH Income" = "med_hhinc",
+      "% Bachelors" = "pop_ba_pct",
+      "% White" = "pop_white_adj_pct"
+    ),
+    popup.format = list(
+      margin = list(fun = make_margin),
+      total_votes = list(format = "f", digits = 0),
+      clinton_prop = list(fun = make_pct),
+      trump_prop = list(fun = make_pct),
+      med_hhinc = list(fun = make_dollar),
+      pop_ba_pct = list(fun = make_pct),
+      pop_white_adj_pct = list(fun = make_pct)
       )
   ) +
-  tm_borders(col = "lightgreen", lwd = 2) +
-  tm_view(
+  tm_borders(col = "lightgreen", lwd = 2)
+
+layer_income <- 
+  tm_shape(pres_2016_to_map, name = "HH Income") +
+  tm_fill(
+    col = "med_hhinc",
+    palette = "Purples",
+    style = "cont",
+    alpha = 0.65,
+    contrast = c(0.2, 1),
+    title = "Median HH Income",
+    textNA = "No Data",
+    popup.vars = c(
+      "Median HH Income" = "med_hhinc",
+      "Dem/Rep Margin" = "margin",
+      "Total Votes" = "total_votes"
+    ),
+    id = "elect_dist",
+    popup.format = list(
+      med_hhinc = list(fun = make_dollar),
+      margin = list(fun = make_margin),
+      total_votes = list(format = "f", digits = 0)
+      ),
+    legend.show = FALSE
+  ) +
+  tm_borders(col = "lightgreen", lwd = 2)
+
+layer_white <- 
+  tm_shape(pres_2016_to_map, name = "% White") +
+  tm_fill(
+    col = "pop_white_adj_pct",
+    palette = "-RdPu",
+    style = "cont",
+    alpha = 0.65,
+    contrast = c(0, 0.8),
+    title = "% White",
+    textNA = "No Data",
+    popup.vars = c(
+      "% White" = "pop_white_adj_pct",
+      "Dem/Rep Margin" = "margin",
+      "Total Votes" = "total_votes"
+    ),
+    id = "elect_dist",
+    legend.show = FALSE,
+    popup.format = list(
+      pop_white_adj_pct = list(fun = make_pct),
+      margin = list(fun = make_margin),
+      total_votes = list(format = "f", digits = 0)
+      )
+  ) +
+  tm_borders(col = "lightgreen", lwd = 2)
+
+layer_edu <- 
+  tm_shape(pres_2016_to_map, name = "% Bachelors") +
+  tm_fill(
+    col = "pop_ba_pct",
+    palette = "Blues",
+    style = "cont",
+    alpha = 0.65,
+    contrast = c(0, 0.8),
+    title = "% Bachelors",
+    textNA = "No Data",
+    popup.vars = c(
+      "% Bachelors" = "pop_ba_pct",
+      "Dem/Rep Margin" = "margin",
+      "Total Votes" = "total_votes"
+    ),
+    id = "elect_dist",
+    legend.show = FALSE,
+    popup.format = list(
+      pop_ba_pct = list(fun = make_pct),
+      margin = list(fun = make_margin),
+      total_votes = list(format = "f", digits = 0)
+      )
+  ) +
+  tm_borders(col = "lightgreen", lwd = 2)
+
+tm_options <- tm_view(
     alpha = 0.85,
     basemaps = "Stamen.TonerLite",
     legend.position = c("right", "bottom")
     )
+
+leaf_map <- tmap_leaflet(
+  layer_cd11 +
+    layer_pres2016 +
+    layer_income +
+    layer_edu +
+    layer_white +
+    tm_options
+  )
+
+leaf_map %>% 
+ # hideGroup(c("HH Income", "% White", "% Bachelors")) %>%
+    addLayersControl(
+      baseGroups = c(
+        "2016 Presidential",
+        "HH Income",
+        "% White",
+        "% Bachelors"
+        ),
+      options = layersControlOptions(collapsed = FALSE)
+      ) %>%
+  addSearchFeatures(
+    targetGroups  = "CD 11",
+    options = searchFeaturesOptions(
+      zoom = 14,
+      openPopup = TRUE,
+      collapsed = FALSE,
+      position = "topright",
+      textPlaceholder = "Search EDs..."
+      )
+    ) %>%
+  addFullscreenControl(pseudoFullscreen = TRUE)
+
 ```
 
 ### NY 11 Summary
