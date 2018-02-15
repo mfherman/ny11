@@ -231,7 +231,9 @@ leaf_map %>%
       openPopup = TRUE,
       collapsed = FALSE,
       position = "topright",
-      textPlaceholder = "Search EDs..."
+      textPlaceholder = "Search EDs...",
+      hideMarkerOnCollapse = TRUE,
+      textErr = "ED Not Found"
       )
     ) %>%
   addFullscreenControl(pseudoFullscreen = TRUE)
