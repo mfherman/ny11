@@ -284,6 +284,7 @@ datatable(
   extensions = c("Buttons", "Scroller", "Responsive"),
   options = list(
     dom = "Bfrtip",
+    language = list(search = "Filter:"),
     buttons = c("csv", "print"),
     deferRender = TRUE,
     scrollY = "370px",
