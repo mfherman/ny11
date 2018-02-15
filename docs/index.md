@@ -1,8 +1,8 @@
 # NY 11 Maps
 
-### CTC Together Election Districts
+### CTC Target Election Districts
 
-[NY 11 NGP VAN District Map](/2016_pres_van.html)
+[CTC Target District Map](/2016_pres_van.html)
 
 ### Presidential Elections
 
