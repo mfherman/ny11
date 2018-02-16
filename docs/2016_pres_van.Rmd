@@ -1,5 +1,5 @@
 ---
-title: "2016 Presidential Election Results"
+title: "CTC Target Districts Map"
 output: html_document
 ---
 
@@ -61,8 +61,7 @@ make_margin <- function(x, digits = 1) {
 }
 ```
 
-### NY 11 results at the election district-level
-<span style="background-color:lightgreen">Highlighted districts</span> (`r nrow(pres_2016_to_map)`) are included in CTCT's NGP VAN Database
+<span style="background-color:lightgreen">Highlighted districts</span> (`r nrow(pres_2016_to_map)`) are included in CTC's NGP VAN Database
 ```{r make map, cache = FALSE, message = FALSE, out.width = "100%", out.height = "600px"}
 # make a map of clinton/trump margin 2016, highlight ed +-10pt
 tmap_mode("view")
