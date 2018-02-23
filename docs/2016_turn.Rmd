@@ -1,0 +1,190 @@
+---
+title: "2016 Presidential Election Turnout"
+output: html_document
+---
+
+```{r setup, include = FALSE}
+library(knitr)
+library(kableExtra)
+library(tidyverse)
+library(here)
+library(janitor)
+library(sf)
+library(tmap)
+library(DT)
+library(leaflet)
+library(leaflet.extras)
+opts_chunk$set(echo = FALSE, cache = TRUE, cache.path = here("cache/2016_turn/"))
+```
+
+```{r process data, include = FALSE}
+# read in cd 11 ed shape file
+cd11_ed_sf <- read_sf(here("data/geo/cd11_ed.geojson"))
+
+# read in pres results 2016
+pres_2016 <- read_csv(
+  here("output/elect_results/2016_pres.csv"),
+  col_types = cols(year = "i", total_votes = "i", .default = "c")) %>%
+  mutate_at(vars(ends_with("_prop")), as.double) %>%
+  mutate_at(vars(ends_with("_tot")), as.integer)
+
+turnout <-
+  read_csv(
+  here("output/2016_turnout_si.csv"),
+  col_types = cols(elect_dist = "c", turnout_reg_prop = "d", .default = "i")
+  ) %>%
+  rename(total_votes_role = total_votes)
+
+# create dem/rep margins, join with ed geo file
+pres_2016_margin <- pres_2016 %>%
+  mutate(margin = clinton_prop - trump_prop) %>%
+  select(elect_dist, total_votes, margin, clinton_tot,
+         trump_tot, clinton_prop, trump_prop)
+
+pres_2016_to_map <- left_join(cd11_ed_sf, pres_2016_margin) %>%
+  left_join(turnout, by = "elect_dist") %>%
+  mutate(elect_dist = paste("ED", elect_dist))
+
+pres_2016_close_rep <- pres_2016_to_map %>%
+  filter(margin >= -0.1 & margin < 0)
+
+pres_2016_close_dem <- pres_2016_to_map %>%
+  filter(margin >= 0 & margin <= 0.1)
+
+# define a little helper function to format percentages
+make_pct <- function(x, digits = 1) {
+  paste0(formatC(x * 100, digits = digits, format = "f"), "%")
+}
+
+# define a little helper function to format margins
+make_margin <- function(x, digits = 1) {
+  if_else(x > 0,
+          paste0("+",formatC(x * 100, digits = digits, format = "f")),
+          formatC(x * 100, digits = digits, format = "f")
+          )
+}
+```
+
+### NY 11 results at the election district-level
+
+<span style="background-color:lightgreen">Green outlines</span> indicate election districts that lean Republican (between -10 and 0 point margin)  
+<span style="background-color:orange">Orange outlines</span> indicate election districts that lean Democratic (between 0 and +10 point margin)  
+Click an ED for details  
+
+```{r make map, cache = FALSE, message = FALSE, out.width = "100%", out.height = "600px"}
+
+# make a map of clinton/trump margin 2016, highlight ed +-10pt
+tmap_mode("view")
+map <- 
+  tm_shape(pres_2016_to_map, name = "2016 Presidential Turnout") +
+  tm_fill(
+    col = "turnout_reg_prop",
+    palette = "Greens",
+    style = "cont",
+    breaks = seq(0.3, 0.9, by = 0.2),
+    title = "D/R Margin",
+    textNA = "No Votes",
+    popup.vars = c(
+      "Dem/Rep Margin" = "margin",
+      "Total Votes" = "total_votes",
+      "Clinton %" = "clinton_prop",
+      "Trump %" = "trump_prop"
+    ),
+    id = "elect_dist",
+    popup.format = list(
+      margin = list(fun = make_margin),
+      total_votes = list(format = "f", digits = 0),
+      clinton_prop = list(fun = make_pct),
+      trump_prop = list(fun = make_pct)
+      )
+  ) +
+  tm_borders(col = "darkgray") +
+  tm_shape(pres_2016_close_dem, name = "Lean Dem") +
+  tm_borders(col = "orange", lwd = 2) +
+  tm_shape(pres_2016_close_rep, name = "Lean Rep") +
+  tm_borders(col = "green", lwd = 2) +
+  tm_view(
+    alpha = 0.85,
+    basemaps = "Stamen.TonerLite",
+    legend.position = c("right", "bottom")
+    )
+
+tmap_leaflet(map) %>%
+  addSearchFeatures(
+    targetGroups = "2016 Presidential",
+    options = searchFeaturesOptions(
+      zoom = 14,
+      openPopup = TRUE,
+      collapsed = FALSE,
+      position = "topright",
+      textPlaceholder = "Search EDs..."
+      )
+    ) %>%
+  addFullscreenControl(pseudoFullscreen = TRUE)
+
+```
+
+### NY 11 Summary
+```{r summary table}
+tot <- pres_2016_margin %>%
+  summarise(
+    Clinton = sum(clinton_tot, na.rm = TRUE),
+    Trump = sum(trump_tot, na.rm = TRUE),
+    Total = sum(total_votes, na.rm = TRUE),
+    `Clinton %` = make_pct(Clinton / Total),
+    `Trump %` = make_pct(Trump / Total),
+    `Lean Rep EDs` = sum((margin >= -0.1 & margin < 0), na.rm = TRUE),
+    `Lean Dem EDs` = sum((margin >= 0 & margin <= 0.1), na.rm = TRUE)
+  )
+
+kable(
+  tot,
+  format = "html",
+  format.args = list(big.mark = ','),
+  align = "c"
+  ) %>%
+  kable_styling(full_width = FALSE, position = "left")
+```
+
+
+### Swing District Detail
+*EDs between -10 and +10 margin*  
+<br>
+```{r data_table, cache = FALSE}
+to_table <- pres_2016_margin %>%
+  filter(between(margin, -0.1, 0.1)) %>%
+  mutate(
+    lean = if_else(
+      (margin >= -0.1 & margin < 0), "Republican", "Democratic"
+      ),
+    margin = margin * 100
+    ) %>%
+  select(elect_dist, margin, lean, total_votes,
+         clinton_prop, trump_prop, everything()) %>%
+  arrange(margin)
+
+datatable(
+  to_table,
+  class = "row-border hover",
+  rownames = FALSE,
+  colnames = c("Election District", "Margin", "Lean", "Total Votes",
+               "Clinton %", "Trump %", "Clinton", "Trump"),
+  extensions = c("Buttons", "Scroller", "Responsive"),
+  options = list(
+    dom = "Bfrtip",
+    buttons = c("csv", "print"),
+    deferRender = TRUE,
+    scrollY = "370px",
+    scroller = TRUE
+    )
+  ) %>%
+  formatPercentage(5:6, 1) %>%
+  formatRound(2, 1) %>%
+  formatStyle(
+  "margin",
+  target = "row",
+  backgroundColor = styleInterval(c(0), c("#FFF5F5", "#F5F9FF"))
+)
+```
+
+

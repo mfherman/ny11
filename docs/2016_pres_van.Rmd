@@ -322,7 +322,7 @@ to_table <- pres_2016_to_map %>%
       ),
     margin = margin * 100
     ) %>%
-  select(elect_dist, margin, lean, total_votes, med_hhinc,
+  select(elect_dist, margin, total_votes, turnout_reg_prop, med_hhinc,
          pop_white_adj_pct, pop_ba_pct, pop_rent_pct,
          clinton_prop, trump_prop) %>%
   arrange(margin) %>%
@@ -332,7 +332,7 @@ datatable(
   to_table,
   class = "row-border hover",
   rownames = FALSE,
-  colnames = c("ED", "Margin", "Lean", "Total Votes", 
+  colnames = c("ED", "Margin", "Total Votes", "Turnout %", 
                "Median HH Income", "White %", "Bachelors %", "Renters %",
                "Clinton %", "Trump %"),
   extensions = c("Buttons", "Scroller", "Responsive"),
@@ -345,7 +345,7 @@ datatable(
     scroller = TRUE
     )
   ) %>%
-  formatPercentage(6:10, 1) %>%
+  formatPercentage(c(4, 6:9), 1) %>%
   formatRound(2, 1) %>%
   formatCurrency(5, digits = 0) %>%
   formatStyle(
