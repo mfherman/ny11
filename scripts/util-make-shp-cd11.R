@@ -158,3 +158,22 @@ cd11_2012 <- read_sf(here("data/geo/nyed_12b")) %>%
 
 # write new combined shp file
 cd11_2012 %>% write_sf(here("output/geo/cd11_ed_2012.geojson"))
+
+
+## 2008
+cd11_2008 <- read_sf(here("data/geo/nyed_08b")) %>%
+  clean_names() %>%
+  mutate(elect_dist = as.character(elect_dist)) %>%
+  select(elect_dist) %>%
+  st_transform(4326) %>%
+  st_make_valid() %>%
+  st_cast()
+
+cong_2008_sf <- read_sf(here("data/geo/nycg_08c")) %>%
+  filter(CongDist == 13) %>%
+  st_transform(4326)
+
+cd11_2008 %>% 
+  filter(lengths(st_within(., cong_2008_sf)) > 0) %>%
+  write_sf(here("output/geo/cd11_ed_2008.geojson"))
+  

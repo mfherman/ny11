@@ -13,7 +13,9 @@ library(sf)
 library(tmap)
 library(DT)
 library(RColorBrewer)
-opts_chunk$set(echo = FALSE, cache = TRUE, cache.path = here("cache/2016_cong/"))
+library(leaflet)
+library(leaflet.extras)
+opts_chunk$set(echo = FALSE, cache = TRUE, cache.path = here("cache/2016_demo/"))
 ```
 
 ```{r process data, include = FALSE}

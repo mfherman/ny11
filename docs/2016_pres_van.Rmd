@@ -30,16 +30,28 @@ pres_2016 <- read_csv(
   mutate_at(vars(ends_with("_prop")), as.double) %>%
   mutate_at(vars(ends_with("_tot")), as.integer)
 
+# read in turnout 2016
+turnout <-
+  read_csv(
+  here("output/2016_turnout_si.csv"),
+  col_types = cols(elect_dist = "c", turnout_reg_prop = "d", .default = "i")
+  ) %>%
+  rename(total_votes_role = total_votes)
+
 # create dem/rep margins foron, join with ed geo file
-pres_2016_margin <- pres_2016 %>%
+pres_2016_margin <- 
+  pres_2016 %>%
   mutate(margin = clinton_prop - trump_prop) %>%
   select(elect_dist, total_votes, margin, clinton_tot,
          trump_tot, clinton_prop, trump_prop)
 
-pres_2016_to_map <- left_join(cd11_ed_sf, pres_2016_margin) %>%
+pres_2016_to_map <-
+  left_join(cd11_ed_sf, pres_2016_margin) %>%
+  left_join(turnout, by = "elect_dist") %>%
   mutate(elect_dist = paste("ED", elect_dist))
 
 pres_2016_all_to_map <- left_join(cd11_ed_all_sf, pres_2016_margin) %>%
+  left_join(turnout, by = "elect_dist") %>%
   mutate(elect_dist = paste("ED", elect_dist))
 
 # define a little helper function to format percentages
@@ -73,6 +85,7 @@ layer_cd11 <-
     popup.vars = c(
       "Dem/Rep Margin" = "margin",
       "Total Votes" = "total_votes",
+      "Turnout (% of reg voters)" = "turnout_reg_prop",
       "Clinton %" = "clinton_prop",
       "Trump %" = "trump_prop",
       "Median HH Income" = "med_hhinc",
@@ -82,6 +95,7 @@ layer_cd11 <-
     popup.format = list(
       margin = list(fun = make_margin),
       total_votes = list(format = "f", digits = 0),
+      turnout_reg_prop = list(fun = make_pct),
       clinton_prop = list(fun = make_pct),
       trump_prop = list(fun = make_pct),
       med_hhinc = list(fun = make_dollar),
@@ -98,13 +112,14 @@ layer_pres2016 <-
     palette = "RdBu",
     style = "cont",
     alpha = 0.65,
-    breaks = seq(-1, 1, by = 0.2),
+    breaks = seq(-0.5, 0.5, by = 0.2),
     title = "D/R Margin",
     textNA = "No Votes",
     id = "elect_dist",
     popup.vars = c(
       "Dem/Rep Margin" = "margin",
       "Total Votes" = "total_votes",
+      "Turnout (% of reg voters)" = "turnout_reg_prop",
       "Clinton %" = "clinton_prop",
       "Trump %" = "trump_prop",
       "Median HH Income" = "med_hhinc",
@@ -114,12 +129,48 @@ layer_pres2016 <-
     popup.format = list(
       margin = list(fun = make_margin),
       total_votes = list(format = "f", digits = 0),
+      turnout_reg_prop = list(fun = make_pct),
       clinton_prop = list(fun = make_pct),
       trump_prop = list(fun = make_pct),
       med_hhinc = list(fun = make_dollar),
       pop_ba_pct = list(fun = make_pct),
       pop_white_adj_pct = list(fun = make_pct)
       )
+  ) +
+  tm_borders(col = "lightgreen", lwd = 2)
+
+layer_turnout <- 
+  tm_shape(pres_2016_to_map, name = "2016 Turnout") +
+  tm_fill(
+    col = "turnout_reg_prop",
+    palette = "Oranges",
+    style = "cont",
+    alpha = 0.65,
+    contrast = c(0, 1),
+    title = "Median HH Income",
+    textNA = "No Data",
+    id = "elect_dist",
+    popup.vars = c(
+      "Dem/Rep Margin" = "margin",
+      "Total Votes" = "total_votes",
+      "Turnout (% of reg voters)" = "turnout_reg_prop",
+      "Clinton %" = "clinton_prop",
+      "Trump %" = "trump_prop",
+      "Median HH Income" = "med_hhinc",
+      "% Bachelors" = "pop_ba_pct",
+      "% White" = "pop_white_adj_pct"
+    ),
+    popup.format = list(
+      margin = list(fun = make_margin),
+      total_votes = list(format = "f", digits = 0),
+      turnout_reg_prop = list(fun = make_pct),
+      clinton_prop = list(fun = make_pct),
+      trump_prop = list(fun = make_pct),
+      med_hhinc = list(fun = make_dollar),
+      pop_ba_pct = list(fun = make_pct),
+      pop_white_adj_pct = list(fun = make_pct)
+      ),
+    legend.show = FALSE
   ) +
   tm_borders(col = "lightgreen", lwd = 2)
 
@@ -207,6 +258,7 @@ tm_options <- tm_view(
 leaf_map <- tmap_leaflet(
   layer_cd11 +
     layer_pres2016 +
+    layer_turnout +
     layer_income +
     layer_edu +
     layer_white +
@@ -217,6 +269,7 @@ leaf_map %>%
     addLayersControl(
       baseGroups = c(
         "2016 Presidential",
+        "2016 Turnout",
         "HH Income",
         "% White",
         "% Bachelors"
