@@ -1,6 +1,6 @@
 # NY 11 Maps
 
-### [2016 Election Results and Demographics](/ny11/2016_pres_new.html)
+### [2016 Election Results and Demographics](/2016_pres_new.html)
 
 ### Presidential Elections
 
