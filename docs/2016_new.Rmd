@@ -282,7 +282,7 @@ map_layers <-
     layer_white +
     add_basemap
 
-tmap_leaflet(map_layers) %>%
+leaf_map <- tmap_leaflet(map_layers) %>%
   addFullscreenControl(pseudoFullscreen = TRUE) %>%
   addLayersControl(
     baseGroups = c(
@@ -305,6 +305,26 @@ tmap_leaflet(map_layers) %>%
       textPlaceholder = "Search EDs..."
       )
     )
+
+leaf_map
+
+# leaf_pres <-
+#   tmap_leaflet(layer_pres + add_basemap) %>%
+#   addLegend(
+#     pal = colorNumeric(palette = "RdBu", domain = c(-1, 1)),
+#     values = c(-1, 1),
+#     group = "2016 President"
+#     )
+# 
+# leaf_turn <-
+# tmap_leaflet(layer_turnout + add_basemap) %>%
+#   addLegend(
+#     pal = colorNumeric(palette = "Oranges", domain = c(0, 1)),
+#     values = c(0, 1),
+#     group = "2016 Turnout"
+#     )
+
+
 ```
 <br>
 
@@ -356,6 +376,7 @@ kable(
   ) %>%
   kable_styling(full_width = FALSE, position = "left")
 ```
+
 #### NY 11 Demographics
 ```{r demo table}
 tot_demo <- cd11_2016_all_to_map %>%
@@ -378,7 +399,6 @@ kable(
   ) %>%
   kable_styling(full_width = FALSE, position = "left")
 ```
-
 
 ### District Detail
 ```{r data_table, cache = FALSE, out.width = "120%"}
