@@ -100,7 +100,7 @@ current_van <- c(
 opts_chunk$set(echo = FALSE, cache = TRUE, cache.path = here("cache/2016_pres_new/"))
 ```
 
-```{r process data, include = FALSE}
+```{r process data 2016, include = FALSE}
 # read in cd 11 ed shape file
 cd11_ed_all_sf <- read_sf(here("output/geo/cd11_demo_2016.geojson"))
 
@@ -149,6 +149,48 @@ cd11_2016_van_to_map <- cd11_2016_all_to_map %>%
   filter(elect_dist %in% current_van)
 ```
 
+```{r process data 2014, include = FALSE}
+# read in cd 11 ed shape file
+cd11_ed_14 <- read_sf(here("output/geo/cd11_ed_2014.geojson"))
+
+# read in pres results 2012
+cong_2014 <- read_csv(
+  here("output/elect_results/2014_cd11.csv"),
+  col_types = cols(year = "i", total_votes = "i", .default = "c")) %>%
+  mutate_at(vars(ends_with("_prop")), as.double) %>%
+  mutate_at(vars(ends_with("_tot")), as.integer)
+
+cong_2014_margin <- cong_2014 %>%
+  mutate(margin = recchia_prop - grimm_prop) %>%
+  select(elect_dist, total_votes, margin, recchia_tot,
+         grimm_tot, recchia_prop, grimm_prop)
+
+cong_2014_to_map <- left_join(cd11_ed_14, cong_2014_margin) %>%
+  mutate(elect_dist = paste("ED", elect_dist))
+```
+
+
+```{r process data 2012, include = FALSE}
+# read in cd 11 ed shape file
+cd11_ed_12 <- read_sf(here("output/geo/cd11_ed_2012.geojson"))
+
+# read in pres results 2012
+pres_2012 <- read_csv(
+  here("output/elect_results/2012_pres.csv"),
+  col_types = cols(year = "i", total_votes = "i", .default = "c")) %>%
+  mutate_at(vars(ends_with("_prop")), as.double) %>%
+  mutate_at(vars(ends_with("_tot")), as.integer)
+
+# create dem/rep margins, join with ed geo file
+pres_2012_margin <- pres_2012 %>%
+  mutate(margin = obama_prop - romney_prop) %>%
+  select(elect_dist, total_votes, margin, obama_tot,
+         romney_tot, obama_prop, romney_prop)
+
+pres_2012_to_map <- left_join(cd11_ed_12, pres_2012_margin) %>%
+  mutate(elect_dist = paste("ED", elect_dist))
+```
+
 **Highlighted districts** (`r nrow(cd11_2016_van_to_map)`) are included in CTC's NGP VAN Database
 ```{r make map, cache = FALSE, message = FALSE, out.width = "100%", out.height = "600px"}
 # define popup vars and formating
@@ -176,6 +218,46 @@ popup.format <- list(
   med_hhinc = list(fun = make_dollar),
   pop_ba_pct = list(fun = make_pct),
   pop_white_adj_pct = list(fun = make_pct)
+  )
+
+# define popup vars and formating
+popup.vars.12 <- c(
+  "Pres Margin" = "margin",
+  "Total Votes" = "total_votes",
+  #"Registered Voters" = "total_reg",
+  #"Turnout (% of reg voters)" = "turnout_reg_prop",
+  "Obama %" = "obama_prop",
+  "Romney %" = "romney_prop"
+  )
+
+popup.format.12 <- list(
+  margin = list(fun = make_margin),
+ # margin_cong = list(fun = make_margin),
+  total_votes = list(format = "f", digits = 0),
+  #total_reg = list(format = "f", digits = 0),
+  #turnout_reg_prop = list(fun = make_pct),
+  obama_prop = list(fun = make_pct),
+  romney_prop = list(fun = make_pct)
+  )
+
+# define popup vars and formating
+popup.vars.14 <- c(
+  "Pres Margin" = "margin",
+  "Total Votes" = "total_votes",
+  #"Registered Voters" = "total_reg",
+  #"Turnout (% of reg voters)" = "turnout_reg_prop",
+  "Recchia %" = "recchia_prop",
+  "Grimm %" = "grimm_prop"
+  )
+
+popup.format.14 <- list(
+  margin = list(fun = make_margin),
+ # margin_cong = list(fun = make_margin),
+  total_votes = list(format = "f", digits = 0),
+  #total_reg = list(format = "f", digits = 0),
+  #turnout_reg_prop = list(fun = make_pct),
+  recchia_prop = list(fun = make_pct),
+  grimm_prop = list(fun = make_pct)
   )
 
 # make a map of clinton/trump margin 2016, highlight ed +-10pt
@@ -210,6 +292,21 @@ layer_cong <-
   tm_shape(cd11_2016_van_to_map, name = "2016 House") +
   tm_borders("black", lwd = 1.5)
 
+layer_cong_14 <- 
+  tm_shape(cong_2014_to_map, name = "2014 House") +
+  tm_fill(
+    col = "margin",
+    palette = "RdBu",
+    style = "cont",
+    id = "elect_dist",
+    popup.vars = popup.vars.14,
+    popup.format = popup.format.14,
+    legend.show = FALSE
+    ) +
+  tm_borders(col = "darkgray") +
+  tm_shape(cd11_2016_van_to_map, name = "2014 House") +
+  tm_borders("black", lwd = 1.5)
+
 layer_turnout <- 
   tm_shape(cd11_2016_all_to_map, name = "2016 Turnout") +
   tm_fill(
@@ -223,6 +320,23 @@ layer_turnout <-
   ) +
   tm_borders(col = "darkgray") +
   tm_shape(cd11_2016_van_to_map, name = "2016 Turnout") +
+  tm_borders("black", lwd = 1.5)
+
+layer_pres_12 <- 
+  layer_income <- 
+  tm_shape(pres_2012_to_map, name = "2012 Presidential") +
+  tm_fill(
+    col = "margin",
+    palette = "RdBu",
+    style = "cont",
+    contrast = c(0.2, 1),
+    id = "elect_dist",
+    popup.vars = popup.vars.12,
+    popup.format = popup.format.12,
+    legend.show = FALSE
+  ) +
+  tm_borders(col = "darkgray") +
+  tm_shape(cd11_2016_van_to_map, name = "2012 Presidential") +
   tm_borders("black", lwd = 1.5)
 
 layer_income <- 
@@ -275,7 +389,9 @@ layer_edu <-
 
 map_layers <-
     layer_pres +
+    layer_pres_12 +
     layer_cong +
+    layer_cong_14 +
     layer_turnout +
     layer_income +
     layer_edu +
@@ -287,7 +403,9 @@ leaf_map <- tmap_leaflet(map_layers) %>%
   addLayersControl(
     baseGroups = c(
       "2016 President",
+      "2012 Presidential",
       "2016 House",
+      "2014 House",
       "2016 Turnout",
       "HH Income",
       "% White",
@@ -352,6 +470,31 @@ kable(
   ) %>%
   kable_styling(full_width = FALSE, position = "left")
 ```
+#### 2012 President
+```{r pres 12 table}
+tot_pres_12 <- pres_2012_margin %>%
+  summarise(
+    Obama = sum(obama_tot, na.rm = TRUE),
+    Romney = sum(romney_tot, na.rm = TRUE),
+    Total = sum(total_votes, na.rm = TRUE),
+    Margin = make_margin((Obama / Total) - (Romney / Total)),
+    `Obama %` = make_pct(Obama / Total),
+    `Romney %` = make_pct(Romney / Total),
+    # `Turnout (% of reg voters)` = make_pct(
+    #   sum(total_votes_cong[elect_dist %in% turnout$elect_dist], na.rm = TRUE) /
+    #     sum(turnout$total_reg)
+    #   )
+    )
+
+kable(
+  tot_pres_12,
+  format = "html",
+  format.args = list(big.mark = ','),
+  align = "c"
+  ) %>%
+  kable_styling(full_width = FALSE, position = "left")
+```
+
 #### 2016 House
 ```{r cong table}
 tot_cong <- cong_2016_margin %>%
@@ -376,6 +519,32 @@ kable(
   ) %>%
   kable_styling(full_width = FALSE, position = "left")
 ```
+
+#### 2014 House
+```{r cong 14 table}
+tot_cong_14 <- cong_2014_margin %>%
+  summarise(
+    Recchia = sum(recchia_tot, na.rm = TRUE),
+    Grimm = sum(grimm_tot, na.rm = TRUE),
+    Total = sum(total_votes, na.rm = TRUE),
+    Margin = make_margin((Recchia / Total) - (Grimm / Total)),
+    `Recchia %` = make_pct(Recchia / Total),
+    `Grimm %` = make_pct(Grimm / Total),
+    # `Turnout (% of reg voters)` = make_pct(
+    #   sum(total_votes_cong[elect_dist %in% turnout$elect_dist], na.rm = TRUE) /
+    #     sum(turnout$total_reg)
+    #   )
+    )
+
+kable(
+  tot_cong_14,
+  format = "html",
+  format.args = list(big.mark = ','),
+  align = "c"
+  ) %>%
+  kable_styling(full_width = FALSE, position = "left")
+```
+
 
 #### NY 11 Demographics
 ```{r demo table}

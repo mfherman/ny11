@@ -1,14 +1,6 @@
 # NY 11 Maps
 
-### [2016 Election Results and Demographics](/2016_new.html)
-
-### Presidential Elections
-
-[2012 Presidential General Election](/2012_pres.html)
-
-### Congressional Elections
-
-[2014 Congressional General Election](/2014_cong.html)
+### [NY 11 Election Results and Demographics](/2016_new.html)
 
 ### Mayoral Elections
 
