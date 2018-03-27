@@ -572,7 +572,7 @@ kable(
 ### District Detail
 ```{r data_table, cache = FALSE, out.width = "120%"}
 to_table <- cd11_2016_all_to_map %>%
-  filter(elect_dist %in% current_van) %>% 
+  filter(total_votes > 0) %>% 
   mutate(
     margin = margin * 100,
     margin_cong = margin_cong * 100) %>%
