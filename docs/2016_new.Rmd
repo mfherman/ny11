@@ -48,7 +48,6 @@ add_basemap <-
   )
 
 # define van districts for filtering
-
 current_van <- c(
   "46035",
   "46047",
@@ -68,35 +67,38 @@ current_van <- c(
   "47006",
   "49047",
   "49048",
-  "49049",
-  "49051",
   "49052",
+  "61024",
+  "61038",
+  "61039",
+  "61060",
+  "63003",
   "63011",
   "63013",
   "63016",
   "63024",
+  "63038",
+  "63052",
   "63053",
   "63055",
-  "63060",
-  "63069",
-  "63068",
   "63056",
-  "63054",
-  "61024",
-  "61039",
-  "61038",
-  "63003",
+  "63060",
   "63061",
+  "63068",
+  "63069",
   "63073",
   "63074",
   "64043",
   "64045",
   "64046",
   "64047",
-  "61052",
-  "64053",
-  "64038"
-)
+  "64049",
+  "64050",
+  "64051",
+  "64052",
+  "64053"
+  )
+
 opts_chunk$set(echo = FALSE, cache = TRUE, cache.path = here("cache/2016_pres_new/"))
 ```
 
@@ -122,9 +124,9 @@ cong_2016 <-
 # read in turnout 2016
 turnout <-
   read_csv(
-  here("output/2016_turnout_si.csv"),
-  col_types = cols(elect_dist = "c", turnout_reg_prop = "d", .default = "i")) %>%
-  rename(total_votes_role = total_votes)
+  here("output/2016_registered_all.csv"),
+  col_types = cols(elect_dist = "c", total_reg = "i")
+  )
 
 # create dem/rep margins foron, join with ed geo file
 pres_2016_margin <- 
@@ -143,7 +145,8 @@ cong_2016_margin <-
 cd11_2016_all_to_map <-
   left_join(cd11_ed_all_sf, pres_2016_margin) %>%
   left_join(cong_2016_margin) %>%
-  left_join(turnout, by = "elect_dist")
+  left_join(turnout, by = "elect_dist") %>%
+  mutate(turnout_reg_prop = total_votes / total_reg)
 
 cd11_2016_van_to_map <- cd11_2016_all_to_map %>%
   filter(elect_dist %in% current_van)
@@ -313,6 +316,7 @@ layer_turnout <-
     col = "turnout_reg_prop",
     palette = "Oranges",
     style = "cont",
+    contrast = c(0, 1),
     id = "elect_dist",
     popup.vars = popup.vars,
     popup.format = popup.format,
@@ -469,6 +473,7 @@ kable(
   align = "c"
   ) %>%
   kable_styling(full_width = FALSE, position = "left")
+
 ```
 #### 2012 President
 ```{r pres 12 table}
@@ -518,6 +523,7 @@ kable(
   align = "c"
   ) %>%
   kable_styling(full_width = FALSE, position = "left")
+
 ```
 
 #### 2014 House
@@ -609,4 +615,5 @@ datatable(
   target = "row",
   backgroundColor = styleInterval(c(0), c("#FFF5F5", "#F5F9FF"))
 )
+
 ```

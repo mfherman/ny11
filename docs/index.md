@@ -8,4 +8,4 @@
 
 ### Google Satelite View Map
 
-[NY11 Congressional District](https://drive.google.com/open?id=1qWf4cgy9aljU8wsP-0_DT6dlEEP8jOUB&usp=sharing)
+[NY 11 Congressional District](https://drive.google.com/open?id=1qWf4cgy9aljU8wsP-0_DT6dlEEP8jOUB&usp=sharing)
